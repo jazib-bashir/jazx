@@ -33,10 +33,11 @@ Benefits:
 
 - `commit` command for high-quality commit messages from staged changes
 - `pr` command for branch-based PR descriptions (`diff` + commit log context)
-- `review` command for risk-focused code review notes
-- `summarize` command for concise branch summaries
+- `review` command for risk-focused notes (branch, staged, or time-based)
+- `summarize` command for concise summaries (branch, staged, or time-based)
 - Provider support: `groq` (default) and `openai`
 - Optional PR checklist appending via `jazx pr --checklist`
+- File filtering support via `--files` with default noise exclusion
 - Structured, consistent command output with actionable error messages
 - Local config support at `~/.jazx/config.json`
 
