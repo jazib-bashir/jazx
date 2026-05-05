@@ -1,0 +1,19 @@
+{
+  "name": "jazx",
+  "version": "1.0.0",
+  "description": "AI-powered git commit message generator",
+  "type": "module",
+  "bin": {
+    "jazx": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests configured\""
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "openai": "^5.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
