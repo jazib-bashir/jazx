@@ -33,6 +33,127 @@ const CHECKLIST_SECTION = `---
 - [ ] Changes have been reviewed by at least one other contributor
 - [ ] Pull request linked to task tracker where applicable`;
 
+function renderError(error, commandName) {
+  const rawMessage = error?.message || "Unknown error";
+  const message = String(rawMessage);
+
+  if (message.includes("No API key found")) {
+    return [
+      "❌ No API key found.",
+      "",
+      "Run one of:",
+      "  jazx config set-key <your-key>",
+      "  export GROQ_API_KEY=\"...\"",
+      "  export OPENAI_API_KEY=\"...\"",
+    ].join("\n");
+  }
+
+  if (message.includes("Cannot use --short and --detailed together")) {
+    return "❌ Invalid options: use either --short or --detailed, not both.";
+  }
+
+  if (message.includes("No staged changes found")) {
+    return [
+      "❌ No staged changes found.",
+      "",
+      "Stage files first:",
+      "  git add <files>",
+      "Then run:",
+      "  jazx commit",
+    ].join("\n");
+  }
+
+  if (message.includes("Use both --from and --to together")) {
+    return "❌ Invalid branch options: provide both --from and --to, or neither.";
+  }
+
+  if (message.includes("Base and target branches are the same")) {
+    return [
+      "❌ Base and target branches resolve to the same branch.",
+      "",
+      "Use explicit branches, for example:",
+      "  jazx pr --from main --to feature/my-branch",
+      "  jazx review --from main --to feature/my-branch",
+      "  jazx summarize --from main --to feature/my-branch",
+    ].join("\n");
+  }
+
+  if (message.includes("No branch changes found")) {
+    return [
+      "❌ No branch changes found between the selected branches.",
+      "",
+      "Verify branch range and commits, for example:",
+      `  jazx ${commandName} --from main --to feature/my-branch`,
+    ].join("\n");
+  }
+
+  if (message.includes("Invalid provider")) {
+    return "❌ Invalid provider. Allowed values: groq, openai.";
+  }
+
+  if (message.includes("Failed to detect current branch")) {
+    return [
+      "❌ Could not detect current git branch.",
+      "",
+      "Make sure you are inside a git repository and on a branch.",
+    ].join("\n");
+  }
+
+  if (message.includes("Git is not installed")) {
+    return "❌ Git is not installed or not available in PATH.";
+  }
+
+  if (message.includes("not a git repository")) {
+    return "❌ Current directory is not a git repository.";
+  }
+
+  return `❌ ${message}`;
+}
+
+function handleCommandError(error, commandName) {
+  console.error(`\n${renderError(error, commandName)}`);
+  process.exit(1);
+}
+
+function createLoader(text) {
+  const frames = ["|", "/", "-", "\\"];
+  let frameIndex = 0;
+  let timer = null;
+  const stream = process.stdout;
+  const isTTY = Boolean(stream.isTTY);
+
+  return {
+    start() {
+      if (!isTTY) {
+        return;
+      }
+      stream.write(`\n${frames[0]} ${text}`);
+      timer = setInterval(() => {
+        frameIndex = (frameIndex + 1) % frames.length;
+        stream.write(`\r${frames[frameIndex]} ${text}`);
+      }, 100);
+    },
+    stop(doneText) {
+      if (!isTTY) {
+        if (doneText) {
+          console.log(`\n${doneText}`);
+        }
+        return;
+      }
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      stream.write("\r");
+      stream.clearLine(0);
+      stream.cursorTo(0);
+      if (doneText) {
+        stream.write(`${doneText}\n`);
+      }
+    },
+  };
+}
+
 program
   .name("jazx")
   .description("AI-powered commit message generator")
@@ -48,13 +169,16 @@ program
   .option("--detailed", "Generate title and bullet points")
   .option("--custom <instruction>", "Add custom instruction for generation")
   .action(async (options) => {
+    const loader = createLoader("Generating commit message...");
     try {
       if (options.short && options.detailed) {
         throw new Error("Cannot use --short and --detailed together.");
       }
 
+      loader.start();
       const diff = await getStagedDiff();
       const message = await generateCommitMessage(diff, options);
+      loader.stop("✅ Commit message generated.");
 
       console.log("\nGenerated commit message:\n");
       console.log(message);
@@ -72,8 +196,8 @@ program
       await applyCommitMessage(message);
       console.log("\nCommit applied successfully.");
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      loader.stop();
+      handleCommandError(error, "commit");
     }
   });
 
@@ -84,7 +208,9 @@ program
   .option("--from <baseBranch>", "Base branch (e.g. develop)")
   .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
   .action(async (options) => {
+    const loader = createLoader("Generating PR description...");
     try {
+      loader.start();
       const { baseBranch, targetBranch } = await resolvePRBranches(
         options.from,
         options.to
@@ -99,11 +225,12 @@ program
       if (options.checklist) {
         output = `${output}\n\n${CHECKLIST_SECTION}`;
       }
+      loader.stop("✅ PR description generated.");
       console.log("\nGenerated PR description:\n");
       console.log(output);
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      loader.stop();
+      handleCommandError(error, "pr");
     }
   });
 
@@ -113,7 +240,9 @@ program
   .option("--from <baseBranch>", "Base branch (e.g. develop)")
   .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
   .action(async (options) => {
+    const loader = createLoader("Generating review...");
     try {
+      loader.start();
       const { baseBranch, targetBranch } = await resolvePRBranches(
         options.from,
         options.to
@@ -125,11 +254,12 @@ program
         diff,
         commits,
       });
+      loader.stop("✅ Review generated.");
       console.log("\nGenerated review:\n");
       console.log(output);
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      loader.stop();
+      handleCommandError(error, "review");
     }
   });
 
@@ -139,7 +269,9 @@ program
   .option("--from <baseBranch>", "Base branch (e.g. develop)")
   .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
   .action(async (options) => {
+    const loader = createLoader("Generating summary...");
     try {
+      loader.start();
       const { baseBranch, targetBranch } = await resolvePRBranches(
         options.from,
         options.to
@@ -151,11 +283,12 @@ program
         diff,
         commits,
       });
+      loader.stop("✅ Summary generated.");
       console.log("\nGenerated summary:\n");
       console.log(output);
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      loader.stop();
+      handleCommandError(error, "summarize");
     }
   });
 
@@ -170,8 +303,7 @@ configCommand
       console.log("✅ API key saved successfully");
       console.log(`API key saved: ${maskedKey}`);
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error, "config set-key");
     }
   });
 
@@ -183,9 +315,10 @@ configCommand
       const selected = await setProvider(provider);
       console.log(`✅ Provider set to: ${selected}`);
     } catch (error) {
-      console.error(`\nError: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error, "config set-provider");
     }
   });
 
-program.parseAsync(process.argv);
+program.parseAsync(process.argv).catch((error) => {
+  handleCommandError(error, "jazx");
+});

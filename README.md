@@ -1,60 +1,82 @@
 # jazx
 
-AI-powered Git assistant for commit messages and PR descriptions.
+AI-powered Git workflow CLI for commit messages, PR descriptions, review insights, and branch summaries.
 
-`jazx` helps you:
-- generate high-quality commit messages from staged changes
-- generate PR descriptions from branch differences
-- optionally append a review checklist for PRs
+> npm package: `jazx-cli`  
+> executable command: `jazx`
 
 ## Features
 
-- Provider-based AI support: `groq` (default) and `openai`
-- Clean commit output (no chatty wrappers, no markdown fences)
-- Commit modes: smart, short, detailed, conventional, forced type
-- PR generation from `base...head` diff + commit log context
-- Optional static checklist append with `jazx pr --checklist`
-- Local config at `~/.jazx/config.json`
+- `commit` command for high-quality commit messages from staged changes
+- `pr` command for branch-based PR descriptions (`diff` + commit log context)
+- `review` command for risk-focused code review notes
+- `summarize` command for concise branch summaries
+- Provider support: `groq` (default) and `openai`
+- Optional PR checklist appending via `jazx pr --checklist`
+- Structured, consistent command output with actionable error messages
+- Local config support at `~/.jazx/config.json`
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Command Reference](#command-reference)
+  - [`jazx commit`](#jazx-commit)
+  - [`jazx pr`](#jazx-pr)
+  - [`jazx review`](#jazx-review)
+  - [`jazx summarize`](#jazx-summarize)
+  - [`jazx config`](#jazx-config)
+- [Usage Examples](#usage-examples)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Requirements
 
 - Node.js 18+
 - Git installed and available in `PATH`
-- API key for selected provider
+- API key for selected provider (`groq` or `openai`)
 
 ## Installation
 
 ### Global install
 
 ```bash
-npm install -g jazx
+npm install -g jazx-cli
 ```
 
-### Local usage
+### Local install
 
 ```bash
-npm install jazx
+npm install jazx-cli
 npx jazx --help
+```
+
+## Quick Start
+
+```bash
+# 1) Configure provider and key (one-time)
+jazx config set-provider groq
+jazx config set-key <your-key>
+
+# 2) Generate a commit message
+jazx commit --conventional --short
+
+# 3) Generate a PR description from branch changes
+jazx pr --from main --to feature/my-branch --checklist
 ```
 
 ## Configuration
 
-`jazx` supports two providers:
-- `groq` (default model: `llama-3.1-8b-instant`)
-- `openai` (default model: `gpt-4o-mini`)
+`jazx` supports:
+- `groq` (model: `llama-3.1-8b-instant`)
+- `openai` (model: `gpt-4o-mini`)
 
-### Config commands
-
-| Command | Description |
-| --- | --- |
-| `jazx config set-provider groq` | Set provider to Groq |
-| `jazx config set-provider openai` | Set provider to OpenAI |
-| `jazx config set-key <apiKey>` | Save API key locally |
-
-Saved config file path:
+Config file location:
 - `~/.jazx/config.json`
 
-Example config:
+Example:
 
 ```json
 {
@@ -63,105 +85,109 @@ Example config:
 }
 ```
 
-### Key resolution priority
-
+Key resolution order:
 1. `~/.jazx/config.json`
-2. environment variables:
-   - `GROQ_API_KEY`
-   - `OPENAI_API_KEY`
+2. environment variables (`GROQ_API_KEY`, `OPENAI_API_KEY`)
 
-## Commands
+## Command Reference
 
-| Command | Description |
-| --- | --- |
-| `jazx commit [options]` | Generate commit message from staged changes |
-| `jazx pr [options]` | Generate PR description from branch differences |
-| `jazx config set-key <apiKey>` | Save API key |
-| `jazx config set-provider <provider>` | Set provider (`groq` or `openai`) |
+### `jazx commit`
 
-## `jazx commit` options
+Generate commit message from staged changes (`git diff --staged` / `--cached` fallback).
 
 | Option | Description |
 | --- | --- |
-| `--apply` | Apply generated message with `git commit -m` (with confirmation prompt) |
+| `--apply` | Apply generated message via `git commit -m` after confirmation |
 | `--type <type>` | Force commit type (`feat`, `fix`, `chore`, etc.) |
 | `--conventional` | Enforce conventional commit format |
-| `--short` | Generate only one-line title |
-| `--detailed` | Generate title + bullet points |
-| `--custom <instruction>` | Add custom guidance to generation |
+| `--short` | One-line output only |
+| `--detailed` | Title + bullet points |
+| `--custom <instruction>` | Additional generation guidance |
 
-Behavior rules:
+Rules:
 - default mode is smart (title + optional bullets)
-- `--short` and `--detailed` cannot be used together
-- exits with error if there are no staged changes
+- `--short` and `--detailed` are mutually exclusive
 
-## `jazx pr` options
+### `jazx pr`
+
+Generate PR description from branch differences.
 
 | Option | Description |
 | --- | --- |
-| `--from <baseBranch>` | Base branch for PR diff |
-| `--to <targetBranch>` | Target branch for PR diff |
-| `--checklist` | Append static checklist section |
+| `--from <baseBranch>` | Base branch |
+| `--to <targetBranch>` | Target branch |
+| `--checklist` | Append static checklist block |
 
-Branch behavior:
-- if both `--from` and `--to` are provided, those values are used directly
+Branch selection:
+- if both `--from` and `--to` are provided, they are used directly
 - if neither is provided:
   - head = current branch
-  - base = `develop` if it exists, otherwise `main`
-- if only one is provided, command fails with helpful error
+  - base = `develop` if present, otherwise `main`
 
-`jazx pr` uses:
+Git context used:
 - `git diff base...head`
 - `git log base..head --oneline`
 
-AI output is requested in this structure:
+Output sections:
 - `## Summary`
 - `## Changes`
 - `## Impact`
 - `## Notes`
 
-## Usage examples
+### `jazx review`
 
-### Commit generation
+Generate review-oriented branch analysis from the same branch context as `pr`.
+
+Options:
+- `--from <baseBranch>`
+- `--to <targetBranch>`
+
+Output sections:
+- `## Potential Issues`
+- `## Improvements`
+- `## Risk Areas`
+- `## Test Suggestions`
+
+### `jazx summarize`
+
+Generate a concise branch summary from diff + commit log context.
+
+Options:
+- `--from <baseBranch>`
+- `--to <targetBranch>`
+
+Output format:
+- one short paragraph
+- bullet points of key changes
+
+### `jazx config`
+
+Manage provider and API key.
+
+| Command | Description |
+| --- | --- |
+| `jazx config set-provider <provider>` | Set provider (`groq` or `openai`) |
+| `jazx config set-key <apiKey>` | Save API key locally |
+
+## Usage Examples
 
 ```bash
-# one-line conventional
+# Commit generation
 jazx commit --conventional --short
-
-# detailed with forced type
 jazx commit --type feat --detailed
-
-# custom style instruction
-jazx commit --short --custom "imperative tense, no scope"
-
-# generate + apply
+jazx commit --short --custom "imperative tone"
 jazx commit --apply
-```
 
-### PR generation
-
-```bash
-# auto branch detection (develop -> current branch, fallback main)
+# PR generation
 jazx pr
-
-# explicit branch range
 jazx pr --from develop --to feature/my-change
-
-# append checklist
 jazx pr --checklist
-
-# explicit branches + checklist
 jazx pr --from main --to feature/my-change --checklist
+
+# Review and summarize
+jazx review --from main --to feature/my-change
+jazx summarize --from main --to feature/my-change
 ```
-
-## Checklist appended by `--checklist`
-
-When `--checklist` is used, this static section is appended to the AI-generated PR description:
-
-- Development checks
-- Security checks
-- Network checks
-- Code review checks
 
 ## Troubleshooting
 
@@ -169,11 +195,18 @@ When `--checklist` is used, this static section is appended to the AI-generated 
   - run: `jazx config set-key <your-key>`
   - or export `GROQ_API_KEY` / `OPENAI_API_KEY`
 
-- **No staged changes found (commit command)**
-  - stage files first: `git add <files>`
+- **No staged changes found (commit)**
+  - stage files: `git add <files>`
 
-- **No branch changes found (pr command)**
+- **Invalid branch options**
+  - provide both `--from` and `--to`, or neither
+
+- **No branch changes found**
   - verify branch range and commits between base and target
+
+- **Same base and target branch**
+  - use explicit different branches, for example:  
+    `jazx pr --from main --to feature/my-branch`
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "jazx-cli",
   "version": "1.1.0",
-  "description": "CLI to generate high-quality git commit messages from staged changes using Groq or OpenAI.",
+  "description": "AI-powered Git CLI for commit generation, PR drafting, code review notes, and branch summaries.",
   "type": "module",
   "bin": {
     "jazx": "./bin/cli.js"
@@ -28,9 +28,17 @@
     "cli",
     "git",
     "commit",
+    "pull-request",
+    "pr-description",
+    "code-review",
+    "summarize",
+    "release-notes",
+    "branch-diff",
     "conventional-commits",
     "openai",
     "groq",
+    "llm",
+    "ai",
     "developer-tools",
     "productivity"
   ],
