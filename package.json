@@ -1,6 +1,6 @@
 {
   "name": "jazx-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI to generate high-quality git commit messages from staged changes using Groq or OpenAI.",
   "type": "module",
   "bin": {
