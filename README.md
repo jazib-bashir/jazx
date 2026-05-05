@@ -17,7 +17,7 @@ AI-powered git commit message generator for staged changes.
 
 - Node.js 18+
 - Git installed and available in `PATH`
-- OpenAI API key via `OPENAI_API_KEY` or `jazx config set-key`
+- API key for selected provider (`groq` or `openai`)
 
 ## Installation
 
@@ -39,23 +39,34 @@ Then run with:
 npx jazx commit
 ```
 
-## Setup
+## Provider & Key Setup
 
-You can provide your OpenAI key in either way:
+`jazx` supports two providers and defaults to `groq`.
 
-1. Environment variable:
+| Setting | Command | Notes |
+| --- | --- | --- |
+| Set provider to Groq (default) | `jazx config set-provider groq` | Uses model `llama-3.1-8b-instant` |
+| Set provider to OpenAI | `jazx config set-provider openai` | Uses model `gpt-4o-mini` |
+| Save API key locally | `jazx config set-key <apiKey>` | Stores in `~/.jazx/config.json` |
+
+### How to set the key
+
+Preferred (saved locally):
 
 ```bash
-export OPENAI_API_KEY="your_openai_api_key"
+jazx config set-key sk-abc123
 ```
 
-2. Local jazx config (recommended):
+Environment variable fallback:
 
 ```bash
-jazx config set-key sk-...
+export GROQ_API_KEY="gsk_..."
+export OPENAI_API_KEY="sk-..."
 ```
 
-This stores your key in `~/.jazx/config.json`.
+Priority used by `jazx`:
+1. `~/.jazx/config.json`
+2. environment variables (`GROQ_API_KEY` / `OPENAI_API_KEY`)
 
 ## Usage
 
@@ -65,6 +76,10 @@ jazx commit [options]
 
 ```bash
 jazx config set-key <apiKey>
+```
+
+```bash
+jazx config set-provider <provider>
 ```
 
 ### Config Command
@@ -107,6 +122,8 @@ Key is stored at `~/.jazx/config.json`.
 
 | Use Case | Command |
 | --- | --- |
+| Set provider to Groq | `jazx config set-provider groq` |
+| Set provider to OpenAI | `jazx config set-provider openai` |
 | Save API key locally | `jazx config set-key sk-abc123` |
 | Generate message only | `jazx commit` |
 | Generate strict conventional one-liner | `jazx commit --conventional --short` |
@@ -132,7 +149,7 @@ feat(auth): add token refresh handling
 ## Troubleshooting
 
 - **OpenAI API key not found**  
-  Set `OPENAI_API_KEY` or run:
+  Set key in config or env:
 
   ```bash
   jazx config set-key <apiKey>
@@ -153,6 +170,7 @@ npm install
 
 # 2) Save your key once (or use OPENAI_API_KEY env var)
 node bin/cli.js config set-key sk-abc123
+node bin/cli.js config set-provider groq
 
 # 3) Create a small test change
 echo "// jazx test" >> test.txt
