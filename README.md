@@ -1,200 +1,179 @@
 # jazx
 
-AI-powered git commit message generator for staged changes.
+AI-powered Git assistant for commit messages and PR descriptions.
 
-`jazx` reads your staged diff, asks OpenAI to generate a high-quality commit message, and optionally applies it with `git commit -m`.
+`jazx` helps you:
+- generate high-quality commit messages from staged changes
+- generate PR descriptions from branch differences
+- optionally append a review checklist for PRs
 
 ## Features
 
-- Generate commit messages from `git diff --staged`
-- Clean commit output (no chatty wrappers or markdown fences)
-- Smart output mode (title + optional bullets)
-- Strict Conventional Commits mode
-- Force commit type (`feat`, `fix`, `chore`, etc.)
-- Optional one-line or detailed output styles
-- Custom per-run instruction support via `--custom`
-- Optional confirmation + auto-apply commit flow
+- Provider-based AI support: `groq` (default) and `openai`
+- Clean commit output (no chatty wrappers, no markdown fences)
+- Commit modes: smart, short, detailed, conventional, forced type
+- PR generation from `base...head` diff + commit log context
+- Optional static checklist append with `jazx pr --checklist`
+- Local config at `~/.jazx/config.json`
 
 ## Requirements
 
 - Node.js 18+
 - Git installed and available in `PATH`
-- API key for selected provider (`groq` or `openai`)
+- API key for selected provider
 
 ## Installation
 
-### Global (recommended for CLI usage)
+### Global install
 
 ```bash
 npm install -g jazx
 ```
 
-### Local project usage
+### Local usage
 
 ```bash
 npm install jazx
+npx jazx --help
 ```
 
-Then run with:
+## Configuration
 
-```bash
-npx jazx commit
-```
+`jazx` supports two providers:
+- `groq` (default model: `llama-3.1-8b-instant`)
+- `openai` (default model: `gpt-4o-mini`)
 
-## Provider & Key Setup
+### Config commands
 
-`jazx` supports two providers and defaults to `groq`.
-
-| Setting | Command | Notes |
-| --- | --- | --- |
-| Set provider to Groq (default) | `jazx config set-provider groq` | Uses model `llama-3.1-8b-instant` |
-| Set provider to OpenAI | `jazx config set-provider openai` | Uses model `gpt-4o-mini` |
-| Save API key locally | `jazx config set-key <apiKey>` | Stores in `~/.jazx/config.json` |
-
-### How to set the key
-
-Preferred (saved locally):
-
-```bash
-jazx config set-key sk-abc123
-```
-
-Environment variable fallback:
-
-```bash
-export GROQ_API_KEY="gsk_..."
-export OPENAI_API_KEY="sk-..."
-```
-
-Priority used by `jazx`:
-1. `~/.jazx/config.json`
-2. environment variables (`GROQ_API_KEY` / `OPENAI_API_KEY`)
-
-## Usage
-
-```bash
-jazx commit [options]
-```
-
-```bash
-jazx config set-key <apiKey>
-```
-
-```bash
-jazx config set-provider <provider>
-```
-
-### Config Command
-
-Use this once to save your API key locally:
-
-```bash
-jazx config set-key sk-abc123
-```
-
-Key is stored at `~/.jazx/config.json`.
-
-### Options
-
-- `--apply`  
-  Apply the generated message using `git commit -m` (with confirmation prompt).
-
-- `--type <type>`  
-  Force commit type (for example: `feat`, `fix`, `chore`, `docs`, `refactor`).
-
-- `--conventional`  
-  Enforce Conventional Commits format: `type(scope): message` (or `type: message`).
-
-- `--short`  
-  Generate only a one-line commit title.
-
-- `--detailed`  
-  Always generate title + bullet points.
-
-- `--custom <instruction>`  
-  Add custom guidance for commit generation (for example tone, scope, or style).
-
-## Behavior Rules
-
-- Default mode: smart (title + optional bullets when useful)
-- `--short`: always one line only
-- `--detailed`: always includes bullets
-- `--type`: overrides AI-selected type
-- `--custom`: applies your extra instruction to generation
-- `--short` + `--detailed`: throws an error
-- If no staged changes exist: exits with error
-
-## Examples
-
-| Use Case | Command |
+| Command | Description |
 | --- | --- |
-| Set provider to Groq | `jazx config set-provider groq` |
-| Set provider to OpenAI | `jazx config set-provider openai` |
-| Save API key locally | `jazx config set-key sk-abc123` |
-| Generate message only | `jazx commit` |
-| Generate strict conventional one-liner | `jazx commit --conventional --short` |
-| Generate one-line with custom instruction | `jazx commit --short --custom "imperative, no scope"` |
-| Force type and generate detailed output | `jazx commit --type feat --detailed` |
-| Generate and apply commit | `jazx commit --apply` |
+| `jazx config set-provider groq` | Set provider to Groq |
+| `jazx config set-provider openai` | Set provider to OpenAI |
+| `jazx config set-key <apiKey>` | Save API key locally |
 
-## Example Output (Detailed)
+Saved config file path:
+- `~/.jazx/config.json`
 
-```text
-feat(auth): add token refresh handling
+Example config:
 
-* implement refresh token logic
-* handle expired sessions
-* update middleware validation
+```json
+{
+  "provider": "groq",
+  "apiKey": "your_api_key"
+}
 ```
 
-## Example Output (One-Line)
+### Key resolution priority
 
-```text
-feat: add provider-based config commands
+1. `~/.jazx/config.json`
+2. environment variables:
+   - `GROQ_API_KEY`
+   - `OPENAI_API_KEY`
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `jazx commit [options]` | Generate commit message from staged changes |
+| `jazx pr [options]` | Generate PR description from branch differences |
+| `jazx config set-key <apiKey>` | Save API key |
+| `jazx config set-provider <provider>` | Set provider (`groq` or `openai`) |
+
+## `jazx commit` options
+
+| Option | Description |
+| --- | --- |
+| `--apply` | Apply generated message with `git commit -m` (with confirmation prompt) |
+| `--type <type>` | Force commit type (`feat`, `fix`, `chore`, etc.) |
+| `--conventional` | Enforce conventional commit format |
+| `--short` | Generate only one-line title |
+| `--detailed` | Generate title + bullet points |
+| `--custom <instruction>` | Add custom guidance to generation |
+
+Behavior rules:
+- default mode is smart (title + optional bullets)
+- `--short` and `--detailed` cannot be used together
+- exits with error if there are no staged changes
+
+## `jazx pr` options
+
+| Option | Description |
+| --- | --- |
+| `--from <baseBranch>` | Base branch for PR diff |
+| `--to <targetBranch>` | Target branch for PR diff |
+| `--checklist` | Append static checklist section |
+
+Branch behavior:
+- if both `--from` and `--to` are provided, those values are used directly
+- if neither is provided:
+  - head = current branch
+  - base = `develop` if it exists, otherwise `main`
+- if only one is provided, command fails with helpful error
+
+`jazx pr` uses:
+- `git diff base...head`
+- `git log base..head --oneline`
+
+AI output is requested in this structure:
+- `## Summary`
+- `## Changes`
+- `## Impact`
+- `## Notes`
+
+## Usage examples
+
+### Commit generation
+
+```bash
+# one-line conventional
+jazx commit --conventional --short
+
+# detailed with forced type
+jazx commit --type feat --detailed
+
+# custom style instruction
+jazx commit --short --custom "imperative tense, no scope"
+
+# generate + apply
+jazx commit --apply
 ```
 
-## Notes
+### PR generation
 
-- Commit title is prompted to stay under 72 characters.
-- Generic messages like "update code" are discouraged by prompt rules.
-- Commit message application is safe with quote handling (no shell interpolation).
+```bash
+# auto branch detection (develop -> current branch, fallback main)
+jazx pr
+
+# explicit branch range
+jazx pr --from develop --to feature/my-change
+
+# append checklist
+jazx pr --checklist
+
+# explicit branches + checklist
+jazx pr --from main --to feature/my-change --checklist
+```
+
+## Checklist appended by `--checklist`
+
+When `--checklist` is used, this static section is appended to the AI-generated PR description:
+
+- Development checks
+- Security checks
+- Network checks
+- Code review checks
 
 ## Troubleshooting
 
-- **No API key found**  
-  Set key in config or env:
+- **No API key found**
+  - run: `jazx config set-key <your-key>`
+  - or export `GROQ_API_KEY` / `OPENAI_API_KEY`
 
-  ```bash
-  jazx config set-key <apiKey>
-  ```
+- **No staged changes found (commit command)**
+  - stage files first: `git add <files>`
 
-- **No staged changes found**  
-  Stage files first:
-
-  ```bash
-  git add <files>
-  ```
-
-## Quick Test (End-to-End)
-
-```bash
-# 1) Install dependencies
-npm install
-
-# 2) Save your key once (or use OPENAI_API_KEY env var)
-node bin/cli.js config set-key sk-abc123
-node bin/cli.js config set-provider groq
-
-# 3) Create a small test change
-echo "// jazx test" >> test.txt
-git add test.txt
-
-# 4) Generate a commit message
-node bin/cli.js commit --conventional
-
-# 5) Apply commit with confirmation prompt
-node bin/cli.js commit --apply
-```
+- **No branch changes found (pr command)**
+  - verify branch range and commits between base and target
 
 ## License
 
