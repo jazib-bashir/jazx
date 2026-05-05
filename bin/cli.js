@@ -2,6 +2,8 @@
 
 import { Command } from "commander";
 import { getPRContext, getStagedDiff, resolvePRBranches } from "../lib/getDiff.js";
+import { getFilteredAnalysisContext } from "../lib/getFilteredDiff.js";
+import { getSinceAnalysisContext } from "../lib/getSinceDiff.js";
 import { generateCommitMessage } from "../lib/generateCommit.js";
 import { generatePR } from "../lib/generatePR.js";
 import { generateReview } from "../lib/generateReview.js";
@@ -85,6 +87,22 @@ function renderError(error, commandName) {
       "Verify branch range and commits, for example:",
       `  jazx ${commandName} --from main --to feature/my-branch`,
     ].join("\n");
+  }
+
+  if (message.includes("No matching files found")) {
+    return "❌ No matching files found.";
+  }
+
+  if (message.includes("No relevant changes found")) {
+    return "❌ No relevant changes found.";
+  }
+
+  if (message.includes("No changes found in the given time range")) {
+    return "❌ No changes found in the given time range.";
+  }
+
+  if (message.includes("Invalid --since format")) {
+    return "❌ Invalid --since format. Use 1d, 2d, 1w, or 3w.";
   }
 
   if (message.includes("Invalid provider")) {
@@ -239,15 +257,43 @@ program
   .description("Generate branch review with risks and improvements")
   .option("--from <baseBranch>", "Base branch (e.g. develop)")
   .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
+  .option("--files <patterns>", "Comma-separated file patterns (e.g. src/**,api/**)")
+  .option("--staged", "Use staged diff instead of branch diff")
+  .option("--since <time>", "Filter by recent time window (e.g. 2d, 1w)")
   .action(async (options) => {
     const loader = createLoader("Generating review...");
     try {
       loader.start();
-      const { baseBranch, targetBranch } = await resolvePRBranches(
-        options.from,
-        options.to
-      );
-      const { diff, commits } = await getPRContext(baseBranch, targetBranch);
+      let baseBranch = "staged";
+      let targetBranch = "index";
+      let diff = "";
+      let commits = "";
+      if (options.staged) {
+        ({ diff, commits } = await getFilteredAnalysisContext({
+          staged: true,
+          baseBranch,
+          targetBranch,
+          files: options.files,
+        }));
+      } else if (options.since) {
+        baseBranch = `since ${options.since}`;
+        targetBranch = "now";
+        ({ diff, commits } = await getSinceAnalysisContext({
+          since: options.since,
+          files: options.files,
+        }));
+      } else {
+        ({ baseBranch, targetBranch } = await resolvePRBranches(
+          options.from,
+          options.to
+        ));
+        ({ diff, commits } = await getFilteredAnalysisContext({
+          staged: false,
+          baseBranch,
+          targetBranch,
+          files: options.files,
+        }));
+      }
       const output = await generateReview({
         baseBranch,
         targetBranch,
@@ -268,15 +314,43 @@ program
   .description("Generate concise branch summary")
   .option("--from <baseBranch>", "Base branch (e.g. develop)")
   .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
+  .option("--files <patterns>", "Comma-separated file patterns (e.g. src/**,api/**)")
+  .option("--staged", "Use staged diff instead of branch diff")
+  .option("--since <time>", "Filter by recent time window (e.g. 2d, 1w)")
   .action(async (options) => {
     const loader = createLoader("Generating summary...");
     try {
       loader.start();
-      const { baseBranch, targetBranch } = await resolvePRBranches(
-        options.from,
-        options.to
-      );
-      const { diff, commits } = await getPRContext(baseBranch, targetBranch);
+      let baseBranch = "staged";
+      let targetBranch = "index";
+      let diff = "";
+      let commits = "";
+      if (options.staged) {
+        ({ diff, commits } = await getFilteredAnalysisContext({
+          staged: true,
+          baseBranch,
+          targetBranch,
+          files: options.files,
+        }));
+      } else if (options.since) {
+        baseBranch = `since ${options.since}`;
+        targetBranch = "now";
+        ({ diff, commits } = await getSinceAnalysisContext({
+          since: options.since,
+          files: options.files,
+        }));
+      } else {
+        ({ baseBranch, targetBranch } = await resolvePRBranches(
+          options.from,
+          options.to
+        ));
+        ({ diff, commits } = await getFilteredAnalysisContext({
+          staged: false,
+          baseBranch,
+          targetBranch,
+          files: options.files,
+        }));
+      }
       const output = await generateSummary({
         baseBranch,
         targetBranch,
