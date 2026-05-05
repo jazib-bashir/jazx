@@ -1,10 +1,21 @@
 {
   "name": "jazx",
   "version": "1.0.0",
-  "description": "AI-powered git commit message generator",
+  "description": "CLI to generate high-quality git commit messages from staged changes using Groq or OpenAI.",
   "type": "module",
   "bin": {
     "jazx": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "test": "echo \"No tests configured\""
@@ -13,7 +24,24 @@
     "commander": "^12.1.0",
     "openai": "^5.0.0"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cli",
+    "git",
+    "commit",
+    "conventional-commits",
+    "openai",
+    "groq",
+    "developer-tools",
+    "productivity"
+  ],
+  "author": "Jazib Bashir <jazibbashir@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jazib-bashir/jazx.git"
+  },
+  "homepage": "https://github.com/jazib-bashir/jazx#readme",
+  "bugs": {
+    "url": "https://github.com/jazib-bashir/jazx/issues"
+  },
   "license": "ISC"
 }
