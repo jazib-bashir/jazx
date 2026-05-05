@@ -170,11 +170,20 @@ Output sections:
 
 ### `jazx review`
 
-Generate review-oriented branch analysis from the same branch context as `pr`.
+Generate review-oriented analysis from staged, time-based, or branch-based changes.
 
-Options:
-- `--from <baseBranch>`
-- `--to <targetBranch>`
+| Option | Description |
+| --- | --- |
+| `--from <baseBranch>` | Base branch for branch mode |
+| `--to <targetBranch>` | Target branch for branch mode |
+| `--staged` | Use staged changes (`git diff --staged`) |
+| `--since <time>` | Use time-based mode (`1d`, `2d`, `1w`, `3w`) |
+| `--files <patterns>` | Filter files with comma-separated patterns (`src/**,api/**`) |
+
+Priority:
+- `--staged` (ignores `--since`)
+- `--since`
+- branch mode (`--from/--to` or auto-detect)
 
 Output sections:
 - `## Potential Issues`
@@ -184,11 +193,20 @@ Output sections:
 
 ### `jazx summarize`
 
-Generate a concise branch summary from diff + commit log context.
+Generate a concise summary from staged, time-based, or branch-based changes.
 
-Options:
-- `--from <baseBranch>`
-- `--to <targetBranch>`
+| Option | Description |
+| --- | --- |
+| `--from <baseBranch>` | Base branch for branch mode |
+| `--to <targetBranch>` | Target branch for branch mode |
+| `--staged` | Use staged changes (`git diff --staged`) |
+| `--since <time>` | Use time-based mode (`1d`, `2d`, `1w`, `3w`) |
+| `--files <patterns>` | Filter files with comma-separated patterns (`src/**,api/**`) |
+
+Priority:
+- `--staged` (ignores `--since`)
+- `--since`
+- branch mode (`--from/--to` or auto-detect)
 
 Output format:
 - one short paragraph
@@ -221,6 +239,9 @@ jazx pr --from main --to feature/my-change --checklist
 # Review and summarize
 jazx review --from main --to feature/my-change
 jazx summarize --from main --to feature/my-change
+jazx review --staged --files "src/**,api/**"
+jazx summarize --since 2d
+jazx summarize --since 1w --files "src/**"
 ```
 
 ## Example Output
@@ -298,6 +319,15 @@ Avoid using with sensitive or confidential code unless you trust the provider.
 - **Same base and target branch**
   - use explicit different branches, for example:  
     `jazx pr --from main --to feature/my-branch`
+
+- **No changes found in the given time range**
+  - try a wider range, for example: `--since 1w`
+
+- **No matching files found**
+  - adjust `--files` patterns (comma-separated), for example: `src/**,api/**`
+
+- **No relevant changes found**
+  - matching files exist, but diff is empty for selected mode/range
 
 ## License
 
