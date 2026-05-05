@@ -4,6 +4,8 @@ import { Command } from "commander";
 import { getPRContext, getStagedDiff, resolvePRBranches } from "../lib/getDiff.js";
 import { generateCommitMessage } from "../lib/generateCommit.js";
 import { generatePR } from "../lib/generatePR.js";
+import { generateReview } from "../lib/generateReview.js";
+import { generateSummary } from "../lib/generateSummary.js";
 import { applyCommitMessage, confirmApply } from "../lib/applyCommit.js";
 import { setApiKey, setProvider } from "../lib/config.js";
 
@@ -98,6 +100,58 @@ program
         output = `${output}\n\n${CHECKLIST_SECTION}`;
       }
       console.log("\nGenerated PR description:\n");
+      console.log(output);
+    } catch (error) {
+      console.error(`\nError: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("review")
+  .description("Generate branch review with risks and improvements")
+  .option("--from <baseBranch>", "Base branch (e.g. develop)")
+  .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
+  .action(async (options) => {
+    try {
+      const { baseBranch, targetBranch } = await resolvePRBranches(
+        options.from,
+        options.to
+      );
+      const { diff, commits } = await getPRContext(baseBranch, targetBranch);
+      const output = await generateReview({
+        baseBranch,
+        targetBranch,
+        diff,
+        commits,
+      });
+      console.log("\nGenerated review:\n");
+      console.log(output);
+    } catch (error) {
+      console.error(`\nError: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("summarize")
+  .description("Generate concise branch summary")
+  .option("--from <baseBranch>", "Base branch (e.g. develop)")
+  .option("--to <targetBranch>", "Target branch (e.g. feature/my-change)")
+  .action(async (options) => {
+    try {
+      const { baseBranch, targetBranch } = await resolvePRBranches(
+        options.from,
+        options.to
+      );
+      const { diff, commits } = await getPRContext(baseBranch, targetBranch);
+      const output = await generateSummary({
+        baseBranch,
+        targetBranch,
+        diff,
+        commits,
+      });
+      console.log("\nGenerated summary:\n");
       console.log(output);
     } catch (error) {
       console.error(`\nError: ${error.message}`);
