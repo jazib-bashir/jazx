@@ -1,7 +1,7 @@
 {
   "name": "jazx-cli",
   "version": "1.2.0",
-  "description": "AI-powered Git CLI for commit generation, PR drafting, code review notes, and branch summaries.",
+  "description": "AI-powered Git workflow assistant for commit generation, PR drafting, review insights, and branch summaries.",
   "type": "module",
   "bin": {
     "jazx": "./bin/cli.js"
@@ -32,8 +32,13 @@
     "pr-description",
     "code-review",
     "summarize",
-    "release-notes",
+    "review",
+    "staged-diff",
     "branch-diff",
+    "git-diff",
+    "developer-productivity",
+    "release-notes",
+    "conventional-commit",
     "conventional-commits",
     "openai",
     "groq",

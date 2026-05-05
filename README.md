@@ -1,9 +1,33 @@
 # jazx
 
-AI-powered Git workflow CLI for commit messages, PR descriptions, review insights, and branch summaries.
+AI-powered Git workflow assistant for faster commits, smarter reviews, and clearer PRs — directly from your terminal.
 
 > npm package: `jazx-cli`  
 > executable command: `jazx`
+
+## Why jazx?
+
+Developers spend significant time:
+- writing commit messages
+- understanding branch changes
+- reviewing code
+
+jazx reduces this friction by bringing AI directly into your Git workflow.
+
+Benefits:
+- save time on repetitive tasks
+- improve consistency of commits and PRs
+- get instant insights on code changes
+
+## How it works
+
+1. Reads your git changes (staged or branch diff)
+2. Sends context to AI provider (Groq or OpenAI)
+3. Generates structured output:
+   - commit messages
+   - PR descriptions
+   - review insights
+   - summaries
 
 ## Features
 
@@ -18,6 +42,9 @@ AI-powered Git workflow CLI for commit messages, PR descriptions, review insight
 
 ## Table of Contents
 
+- [Why jazx?](#why-jazx)
+- [How it works](#how-it-works)
+- [Core Commands](#core-commands)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -29,8 +56,17 @@ AI-powered Git workflow CLI for commit messages, PR descriptions, review insight
   - [`jazx summarize`](#jazx-summarize)
   - [`jazx config`](#jazx-config)
 - [Usage Examples](#usage-examples)
+- [Example Output](#example-output)
+- [Privacy](#privacy)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
+
+## Core Commands
+
+- `jazx commit` → generate commit messages
+- `jazx pr` → generate PR descriptions
+- `jazx review` → analyze changes and risks
+- `jazx summarize` → understand branch quickly
 
 ## Requirements
 
@@ -56,15 +92,13 @@ npx jazx --help
 ## Quick Start
 
 ```bash
-# 1) Configure provider and key (one-time)
+npm install -g jazx-cli
+
 jazx config set-provider groq
 jazx config set-key <your-key>
 
-# 2) Generate a commit message
-jazx commit --conventional --short
-
-# 3) Generate a PR description from branch changes
-jazx pr --from main --to feature/my-branch --checklist
+git add .
+jazx commit --apply
 ```
 
 ## Configuration
@@ -188,6 +222,63 @@ jazx pr --from main --to feature/my-change --checklist
 jazx review --from main --to feature/my-change
 jazx summarize --from main --to feature/my-change
 ```
+
+## Example Output
+
+### Commit example
+
+```text
+feat(auth): add token refresh validation
+```
+
+### PR example
+
+```text
+## Summary
+Add token refresh handling and tighten auth middleware checks.
+
+## Changes
+- implement refresh token verification flow
+- update middleware validation and error responses
+
+## Impact
+Improves session reliability and auth safety.
+
+## Notes
+No database schema changes.
+```
+
+### Review example
+
+```text
+## Potential Issues
+- refresh token edge cases may fail if token clock skew is high
+
+## Improvements
+- add explicit tests for expired and malformed refresh tokens
+
+## Risk Areas
+- auth middleware and session lifecycle handling
+
+## Test Suggestions
+- run auth integration tests and manual session expiry checks
+```
+
+### Summary example
+
+```text
+This branch strengthens authentication reliability and improves error handling around token refresh.
+
+- add refresh token validation in middleware
+- improve expired-session handling paths
+- update auth-related tests for edge cases
+```
+
+## Privacy
+
+jazx sends git diffs and commit context to the configured AI provider (Groq or OpenAI).
+
+Avoid using with sensitive or confidential code unless you trust the provider.
 
 ## Troubleshooting
 
