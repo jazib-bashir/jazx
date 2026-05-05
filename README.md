@@ -7,10 +7,12 @@ AI-powered git commit message generator for staged changes.
 ## Features
 
 - Generate commit messages from `git diff --staged`
+- Clean commit output (no chatty wrappers or markdown fences)
 - Smart output mode (title + optional bullets)
 - Strict Conventional Commits mode
 - Force commit type (`feat`, `fix`, `chore`, etc.)
 - Optional one-line or detailed output styles
+- Custom per-run instruction support via `--custom`
 - Optional confirmation + auto-apply commit flow
 
 ## Requirements
@@ -109,12 +111,16 @@ Key is stored at `~/.jazx/config.json`.
 - `--detailed`  
   Always generate title + bullet points.
 
+- `--custom <instruction>`  
+  Add custom guidance for commit generation (for example tone, scope, or style).
+
 ## Behavior Rules
 
 - Default mode: smart (title + optional bullets when useful)
 - `--short`: always one line only
 - `--detailed`: always includes bullets
 - `--type`: overrides AI-selected type
+- `--custom`: applies your extra instruction to generation
 - `--short` + `--detailed`: throws an error
 - If no staged changes exist: exits with error
 
@@ -127,10 +133,11 @@ Key is stored at `~/.jazx/config.json`.
 | Save API key locally | `jazx config set-key sk-abc123` |
 | Generate message only | `jazx commit` |
 | Generate strict conventional one-liner | `jazx commit --conventional --short` |
+| Generate one-line with custom instruction | `jazx commit --short --custom "imperative, no scope"` |
 | Force type and generate detailed output | `jazx commit --type feat --detailed` |
 | Generate and apply commit | `jazx commit --apply` |
 
-## Example Output
+## Example Output (Detailed)
 
 ```text
 feat(auth): add token refresh handling
@@ -138,6 +145,12 @@ feat(auth): add token refresh handling
 * implement refresh token logic
 * handle expired sessions
 * update middleware validation
+```
+
+## Example Output (One-Line)
+
+```text
+feat: add provider-based config commands
 ```
 
 ## Notes
@@ -148,7 +161,7 @@ feat(auth): add token refresh handling
 
 ## Troubleshooting
 
-- **OpenAI API key not found**  
+- **No API key found**  
   Set key in config or env:
 
   ```bash

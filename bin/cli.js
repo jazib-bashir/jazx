@@ -21,6 +21,7 @@ program
   .option("--conventional", "Enforce strict conventional commit format")
   .option("--short", "Generate one-line commit message only")
   .option("--detailed", "Generate title and bullet points")
+  .option("--custom <instruction>", "Add custom instruction for generation")
   .action(async (options) => {
     try {
       if (options.short && options.detailed) {
