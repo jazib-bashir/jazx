@@ -1,6 +1,6 @@
 {
   "name": "jazx-cli",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "AI-powered Git CLI for commit generation, PR drafting, code review notes, and branch summaries.",
   "type": "module",
   "bin": {
